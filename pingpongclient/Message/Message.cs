@@ -67,7 +67,6 @@ namespace MyMessage
 
             IntPtr ptr = Marshal.AllocHGlobal(Size);
             Marshal.StructureToPtr(obj, ptr, false);
-            // 가상 함수 테이블 포인터 때문에 이러는건지는 모르겠음
             Marshal.Copy(ptr, arr, 0, Size);
             Marshal.FreeHGlobal(ptr);
 
