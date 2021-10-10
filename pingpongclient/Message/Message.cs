@@ -12,13 +12,15 @@ namespace MyMessage
 
     public class PacketGenerator : MyUtils.Singleton<PacketGenerator>
     {
-        private Dictionary<uint, string> PacketFinder = new Dictionary<System.UInt32, string>();
+        private HashSet<Message.PacketEnum> PacketFinder = new HashSet<Message.PacketEnum>();
 
         public PacketGenerator()
         {
+            PacketFinder.Clear();
+
             for (var idx = PacketID.Start; idx != PacketID.End; ++idx)
             {
-                PacketFinder.Add((uint)idx, idx.ToString());
+                PacketFinder.Add(idx);
             }
         }
 
@@ -32,13 +34,13 @@ namespace MyMessage
             byte[] RecvArray = Encoding.UTF8.GetBytes(ReceiveString);
             byte[] PacketIDField = new byte[sizeof(System.UInt32)];
 
-            for (int idx = 0; idx < PacketIDField.Length; ++idx)
+            for(int idx=0; idx<PacketIDField.Length; ++idx)
             {
                 PacketIDField[idx] = RecvArray[idx];
             }
 
             System.UInt32 PacketID = BitConverter.ToUInt32(PacketIDField);
-            string PacketName = FindPacketName(PacketID);
+            string PacketName = FindPacketName((Message.PacketEnum)PacketID);
 
             if (PacketName == null)
             {
@@ -49,14 +51,14 @@ namespace MyMessage
             return ToStr(RecvArray, type) as Message.MessageBase;
         }
 
-        private string FindPacketName(System.UInt32 PacketID)
+        private string FindPacketName(Message.PacketEnum PacketID)
         {
-            if (PacketFinder.Count < PacketID)
+            if (PacketFinder.Contains(PacketID) == false)
             {
                 return null;
             }
 
-            return PacketFinder[PacketID];
+            return PacketID.ToString();
         }
 
         public byte[] ClassToBytes(object obj)
@@ -88,7 +90,7 @@ namespace MyMessage
         internal enum PacketEnum : System.UInt32
         {
             Start = 0,
-            Ping = 1,
+            Ping,
             Pong,
             End
         }

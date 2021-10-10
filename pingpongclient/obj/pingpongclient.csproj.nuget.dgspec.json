@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\User\\source\\repos\\pingpongclient\\pingpongclient\\pingpongclient.csproj": {}
+    "C:\\Users\\User\\Documents\\akka.net_PingPongClient\\pingpongclient\\pingpongclient.csproj": {}
   },
   "projects": {
-    "C:\\Users\\User\\source\\repos\\pingpongclient\\pingpongclient\\pingpongclient.csproj": {
+    "C:\\Users\\User\\Documents\\akka.net_PingPongClient\\pingpongclient\\pingpongclient.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\repos\\pingpongclient\\pingpongclient\\pingpongclient.csproj",
+        "projectUniqueName": "C:\\Users\\User\\Documents\\akka.net_PingPongClient\\pingpongclient\\pingpongclient.csproj",
         "projectName": "pingpongclient",
-        "projectPath": "C:\\Users\\User\\source\\repos\\pingpongclient\\pingpongclient\\pingpongclient.csproj",
+        "projectPath": "C:\\Users\\User\\Documents\\akka.net_PingPongClient\\pingpongclient\\pingpongclient.csproj",
         "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\repos\\pingpongclient\\pingpongclient\\obj\\",
+        "outputPath": "C:\\Users\\User\\Documents\\akka.net_PingPongClient\\pingpongclient\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
