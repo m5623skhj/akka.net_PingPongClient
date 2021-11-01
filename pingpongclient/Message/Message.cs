@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using Akka.Actor;
 using Akka.IO;
 
+using pingpongclient;
+
 namespace MyMessage
 {
     using PacketID = Message.PacketEnum;
@@ -34,7 +36,7 @@ namespace MyMessage
             byte[] RecvArray = Encoding.UTF8.GetBytes(ReceiveString);
             byte[] PacketIDField = new byte[sizeof(System.UInt32)];
 
-            for(int idx=0; idx<PacketIDField.Length; ++idx)
+            for (int idx = 0; idx < PacketIDField.Length; ++idx)
             {
                 PacketIDField[idx] = RecvArray[idx];
             }
@@ -48,7 +50,18 @@ namespace MyMessage
             }
 
             Type type = Type.GetType("MyMessage.Message+" + PacketName);
-            return ToStr(RecvArray, type) as Message.MessageBase;
+            if (type != null)
+            {
+                return ToStr(RecvArray, type) as Message.MessageBase;
+            }
+
+            type = Type.GetType("MyMessage.Chatting2User." + PacketName);
+            if (type != null)
+            {
+                return ToStr(RecvArray, type) as Message.MessageBase;
+            }
+
+            return null;
         }
 
         private string FindPacketName(Message.PacketEnum PacketID)
@@ -92,6 +105,13 @@ namespace MyMessage
             Start = 0,
             Ping,
             Pong,
+            // User2Chatting
+            EnterChatRoomReq,
+            LeaveChatRoom,
+            SendChatting,
+            // Chatting2User
+            EnterChatRoomRes,
+            RecvChatting,
             End
         }
 
@@ -106,7 +126,7 @@ namespace MyMessage
             }
 
             protected abstract void Init();
-            public abstract void PacketHandle(IActorRef Connection);
+            public abstract void PacketHandle(PingPongClient UserConnection);
         }
 
         #region ping
@@ -124,12 +144,12 @@ namespace MyMessage
                 PacketID = (System.UInt32)PacketEnum.Ping;
             }
 
-            public override void PacketHandle(IActorRef Connection)
+            public override void PacketHandle(PingPongClient UserConnection)
             {
                 Pong PongMessage = new Pong();
                 PongMessage.Message = Message;
 
-                Connection.Tell(Tcp.Write.Create(ByteString.FromBytes(PacketGenerator.GetInst.ClassToBytes(PongMessage))));
+                UserConnection.Connection.Tell(Tcp.Write.Create(ByteString.FromBytes(PacketGenerator.GetInst.ClassToBytes(PongMessage))));
             }
         }
         #endregion
@@ -149,9 +169,133 @@ namespace MyMessage
                 PacketID = (System.UInt32)PacketEnum.Pong;
             }
 
-            public override void PacketHandle(IActorRef Connection)
+            public override void PacketHandle(PingPongClient UserConnection)
             {
                 System.Console.WriteLine(Message);
+            }
+        }
+        #endregion
+    }
+
+    namespace User2Chatting
+    {
+        #region EnterChatRoomReq
+        /// <summary>
+        /// ChannelName에 해당하는 채팅 채널로 진입 요청
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public class EnterChatRoomReq : Message.MessageBase
+        {
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public string ChannelName;
+
+            protected override void Init()
+            {
+                PacketID = (System.UInt32)Message.PacketEnum.EnterChatRoomReq;
+            }
+
+            public override void PacketHandle(PingPongClient UserConnection)
+            {
+            }
+        }
+        #endregion
+
+        #region LeaveChatRoom
+        /// <summary>
+        /// ChannelName에 해당하는 채팅 채널로 진입 요청
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public class LeaveChatRoom : Message.MessageBase
+        {
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public string ChannelName;
+
+            protected override void Init()
+            {
+                PacketID = (System.UInt32)Message.PacketEnum.LeaveChatRoom;
+            }
+
+            public override void PacketHandle(PingPongClient UserConnection)
+            {
+                
+            }
+        }
+        #endregion
+
+        #region SendChatting
+        /// <summary>
+        /// 지정한 채널에 채팅 메시지 송신
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public class SendChatting : Message.MessageBase
+        {
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public string ChannelName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+            public string ChatMessage;
+
+            protected override void Init()
+            {
+                PacketID = (System.UInt32)Message.PacketEnum.SendChatting;
+            }
+
+            public override void PacketHandle(PingPongClient UserConnection)
+            {
+            }
+        }
+        #endregion
+    }
+
+    namespace Chatting2User
+    {
+        #region EnterChatRoomRes
+        /// <summary>
+        /// ChannelName에 해당하는 채팅 채널로 진입 응답
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public class EnterChatRoomRes : Message.MessageBase
+        {
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public string ChannelName;
+            bool IsEnterChannel = false;
+
+            protected override void Init()
+            {
+                PacketID = (System.UInt32)Message.PacketEnum.EnterChatRoomRes;
+            }
+
+            public override void PacketHandle(PingPongClient UserConnection)
+            {
+                if(IsEnterChannel == false || UserConnection.ChannelSet.Contains(ChannelName) == true)
+                {
+                    return;
+                }
+
+                UserConnection.ChannelSet.Add(ChannelName);
+            }
+        }
+        #endregion
+
+        #region RecvChatting
+        /// <summary>
+        /// 지정한 채널에서 채팅 메시지 수신
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public class RecvChatting : Message.MessageBase
+        {
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public string ChannelName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+            public string ChatMessage;
+
+            protected override void Init()
+            {
+                PacketID = (System.UInt32)Message.PacketEnum.RecvChatting;
+            }
+
+            public override void PacketHandle(PingPongClient UserConnection)
+            {
+                Console.WriteLine("{0} : {1}", ChannelName, ChatMessage);
             }
         }
         #endregion

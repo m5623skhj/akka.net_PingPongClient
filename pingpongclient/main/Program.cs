@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 using Akka.Actor;
 using Akka.IO;
@@ -18,12 +19,18 @@ namespace pingpongclient
 {
     public class PingPongClient : UntypedActor
     {
-        private IActorRef Connection;
+        public IActorRef Connection;
+        public HashSet<string> ChannelSet;
 
         public PingPongClient(string host, int port)
         {
             var EndPoint = new DnsEndPoint(host, port);
             Context.System.Tcp().Tell(new Tcp.Connect(EndPoint));
+        }
+
+        public void SendPacekt(Message.MessageBase packet)
+        {
+            Connection.Tell(Tcp.Write.Create(ByteString.FromBytes(PacketGenerator.GetInst.ClassToBytes(packet))));
         }
 
         protected override void OnReceive(object message)
@@ -37,6 +44,13 @@ namespace pingpongclient
 
                 Sender.Tell(new Tcp.Register(Self));
                 ReadConsole();
+
+                // Enter Channel Test
+                //*
+                EnterChattingChannel("TestChannel1");
+                EnterChattingChannel("TestChannel2");
+                //*/
+
                 Become(Connected());
             }
             else if(message is Tcp.CommandFailed)
@@ -47,6 +61,14 @@ namespace pingpongclient
             {
                 Unhandled(message);
             }
+        }
+
+        private void EnterChattingChannel(string channel)
+        {
+            MyMessage.User2Chatting.EnterChatRoomReq Packet = new MyMessage.User2Chatting.EnterChatRoomReq();
+            Packet.ChannelName = channel;
+
+            SendPacekt(Packet);
         }
 
         protected override void Unhandled(object message)
@@ -61,11 +83,11 @@ namespace pingpongclient
             {
                 string SendMessage = message as string;
                 if (SendMessage != null)
-                {                    
-                    var PingMessage = new Message.Ping
-                    { Message = SendMessage };
+                {
+                    var SendChatting = new MyMessage.User2Chatting.SendChatting();
+                    { SendChatting.ChannelName = "TestChannel2"; SendChatting.ChatMessage = SendMessage; };
 
-                    Connection.Tell(Tcp.Write.Create(ByteString.FromBytes(PacketGenerator.GetInst.ClassToBytes(PingMessage))));
+                    Connection.Tell(Tcp.Write.Create(ByteString.FromBytes(PacketGenerator.GetInst.ClassToBytes(SendChatting))));
 
                     ReadConsole();
                 }
@@ -96,7 +118,10 @@ namespace pingpongclient
 
         private void PacketHandle(Message.MessageBase RecvPacket)
         {
-            RecvPacket.PacketHandle(Connection);
+            if (RecvPacket != null)
+            {
+                RecvPacket.PacketHandle(this);
+            }
         }
     }
 
