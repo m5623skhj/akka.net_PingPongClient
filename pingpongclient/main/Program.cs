@@ -28,7 +28,7 @@ namespace pingpongclient
             Context.System.Tcp().Tell(new Tcp.Connect(EndPoint));
         }
 
-        public void SendPacekt(Message.MessageBase packet)
+        public void SendPacekt(IMessage packet)
         {
             Connection.Tell(Tcp.Write.Create(ByteString.FromBytes(PacketGenerator.GetInst.ClassToBytes(packet))));
         }
@@ -96,7 +96,7 @@ namespace pingpongclient
                     var ReceivedMessage = message as Tcp.Received;
                     if (ReceivedMessage != null)
                     {
-                        var RecvPacket = PacketGenerator.GetInst.MakePacket(ReceivedMessage.Data.ToString());
+                        var RecvPacket = PacketGenerator.GetInst.CreateMessage(ReceivedMessage.Data.ToString());
                         PacketHandle(RecvPacket);
                     }
                 }
@@ -116,7 +116,7 @@ namespace pingpongclient
             Task.Factory.StartNew(self => Console.In.ReadLineAsync().PipeTo((ICanTell)self), Self);
         }
 
-        private void PacketHandle(Message.MessageBase RecvPacket)
+        private void PacketHandle(IMessage RecvPacket)
         {
             if (RecvPacket != null)
             {
