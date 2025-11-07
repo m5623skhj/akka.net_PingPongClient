@@ -36,7 +36,6 @@ RecvChatting { ChannelName: string(16), ChatMessage: string(64) }
 
 - [ ] **Akka.Serialization으로 직렬화 방식 변경**
 - [ ] **패킷 처리 자동화 개선** (리플렉션 최적화)
-- [ ] **채널 선택 UI 추가**
 - [ ] **명령어 기반 채널 관리** (입장/퇴장/목록 조회)
 
 ---
